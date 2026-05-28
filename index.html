@@ -285,6 +285,142 @@
       box-shadow: 0 3px 12px rgba(150,120,211,.35);
     }
 
+    /* ── Slider scale ── */
+    .slider-wrap { margin: 1.5rem 0 .5rem; }
+    .slider-value {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      min-height: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .15rem;
+    }
+    .slider-value .sv-word {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--aubergine);
+      transition: color .2s ease;
+    }
+    .slider-value .sv-num {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--lila);
+      letter-spacing: .03em;
+    }
+    .slider-value.empty .sv-word {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #b3aabf;
+    }
+    .slider-track {
+      position: relative;
+      height: 56px;
+      padding: 0 18px;
+      touch-action: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    .slider-rail {
+      position: absolute;
+      left: 18px; right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 6px;
+      background: #e8e4ee;
+      border-radius: 3px;
+    }
+    .slider-fill {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 6px;
+      width: 0;
+      background: linear-gradient(90deg, var(--lila), var(--aubergine));
+      border-radius: 3px;
+      transition: width .12s ease;
+    }
+    .slider-tick {
+      position: absolute;
+      top: 50%;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #d4cde0;
+      transform: translate(-50%, -50%);
+      transition: background .15s ease;
+      pointer-events: none;
+    }
+    .slider-tick.reached { background: var(--lila); }
+    .slider-thumb {
+      position: absolute;
+      top: 50%;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 4px solid var(--lila);
+      box-shadow: 0 3px 14px rgba(46,26,71,.22);
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform .18s cubic-bezier(.34,1.56,.64,1), left .12s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .slider-track.touched .slider-thumb { transform: translate(-50%, -50%) scale(1); }
+    .slider-track.dragging .slider-thumb { transform: translate(-50%, -50%) scale(1.18); }
+    .slider-anchors {
+      display: flex;
+      justify-content: space-between;
+      margin-top: .85rem;
+      font-size: .74rem;
+      color: #999;
+      font-weight: 500;
+    }
+    @media (max-width: 600px) {
+      .slider-value .sv-word { font-size: 1.3rem; }
+      .slider-thumb { width: 38px; height: 38px; }
+    }
+
+    /* ── Radar / spiderweb ── */
+    .radar-title {
+      text-align: center;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--aubergine);
+      margin: 1.5rem 0 .25rem;
+    }
+    .radar-wrap {
+      display: flex;
+      justify-content: center;
+      margin: .25rem 0 1.5rem;
+    }
+    .radar-svg {
+      width: 100%;
+      max-width: 330px;
+      height: auto;
+      overflow: visible;
+    }
+    .radar-legend {
+      display: flex;
+      justify-content: center;
+      gap: 1.75rem;
+      margin: -.5rem 0 1.75rem;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+    .radar-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      color: #555;
+    }
+    .radar-legend i {
+      width: 14px; height: 14px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
     /* ── Buttons ── */
     .btn {
       display: inline-flex;
@@ -1081,38 +1217,89 @@ function showStatement(ci, si) {
           <span class="comp-pill" style="background:${comp.color}15;color:${comp.color}">${comp.icon} ${comp.title}</span>
         </div>
         <p class="question-text">“${stmt}”</p>
-        <div class="scale-wrap">
-          <div class="scale-labels">
+        <div class="slider-wrap">
+          <div class="slider-value${currentAnswer ? '' : ' empty'}" id="sliderValue">
+            <span class="sv-word">${currentAnswer ? SCALE_WORDS[currentAnswer - 1] : 'Sleep of tik om te kiezen'}</span>
+            <span class="sv-num">${currentAnswer ? currentAnswer + ' / 5' : ''}</span>
+          </div>
+          <div class="slider-track${currentAnswer ? ' touched' : ''}" id="sliderTrack">
+            <div class="slider-rail"></div>
+            <div class="slider-fill" id="sliderFill"></div>
+            ${[0,1,2,3,4].map(i => `<div class="slider-tick" data-i="${i}" style="left:calc(18px + ${i/4} * (100% - 36px))"></div>`).join('')}
+            <div class="slider-thumb" id="sliderThumb"></div>
+          </div>
+          <div class="slider-anchors">
             <span>Helemaal niet</span>
             <span>Volledig</span>
-          </div>
-          <div class="scale-track">
-            ${[1,2,3,4,5].map(v => `
-              <div class="scale-dot${currentAnswer === v ? ' selected' : ''}"
-                   data-value="${v}"
-                   onclick="selectAnswer(${ci}, ${si}, ${v}, this)">${v}</div>
-            `).join('')}
           </div>
         </div>
         <div class="btn-row">
           <button class="btn btn-secondary" onclick="${prevAction}">← Terug</button>
-          <span></span>
+          <button class="btn btn-primary" id="sliderNext"${currentAnswer ? '' : ' disabled'} onclick="advanceFromStatement(${ci}, ${si})">Volgende →</button>
         </div>
       </div>`;
+    initSlider(ci, si, currentAnswer);
   });
 }
 
-function selectAnswer(ci, si, value, dotEl) {
-  answers[`${ci}-${si}`] = value;
+const SCALE_WORDS = ['Helemaal niet', 'Nauwelijks', 'Deels', 'Grotendeels', 'Volledig'];
 
-  // Visual feedback
-  document.querySelectorAll('.scale-dot').forEach(d => d.classList.remove('selected'));
-  dotEl.classList.add('selected');
+function initSlider(ci, si, current) {
+  const track = document.getElementById('sliderTrack');
+  const thumb = document.getElementById('sliderThumb');
+  const fill = document.getElementById('sliderFill');
+  const valBox = document.getElementById('sliderValue');
+  const nextBtn = document.getElementById('sliderNext');
+  if (!track) return;
 
-  // Auto-advance after 350ms
-  setTimeout(() => {
-    advanceFromStatement(ci, si);
-  }, 350);
+  function render(v) {
+    const pct = (v - 1) / 4;
+    thumb.style.left = `calc(18px + ${pct} * (100% - 36px))`;
+    fill.style.width = `calc(${pct} * (100% - 36px))`;
+    track.querySelectorAll('.slider-tick').forEach((t, i) => {
+      t.classList.toggle('reached', i <= v - 1);
+    });
+    valBox.classList.remove('empty');
+    valBox.querySelector('.sv-word').textContent = SCALE_WORDS[v - 1];
+    valBox.querySelector('.sv-num').textContent = v + ' / 5';
+    track.classList.add('touched');
+    nextBtn.disabled = false;
+  }
+  if (current) render(current);
+
+  function valueFromX(clientX) {
+    const rect = track.getBoundingClientRect();
+    const usable = rect.width - 36;
+    let ratio = (clientX - rect.left - 18) / usable;
+    ratio = Math.max(0, Math.min(1, ratio));
+    return Math.round(ratio * 4) + 1;
+  }
+
+  let dragging = false;
+  function commit(v) {
+    answers[`${ci}-${si}`] = v;
+    render(v);
+  }
+  function onDown(e) {
+    dragging = true;
+    track.classList.add('dragging');
+    try { track.setPointerCapture(e.pointerId); } catch (_) {}
+    commit(valueFromX(e.clientX));
+    e.preventDefault();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    commit(valueFromX(e.clientX));
+  }
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    track.classList.remove('dragging');
+  }
+  track.addEventListener('pointerdown', onDown);
+  track.addEventListener('pointermove', onMove);
+  track.addEventListener('pointerup', onUp);
+  track.addEventListener('pointercancel', onUp);
 }
 
 function advanceFromStatement(ci, si) {
@@ -1222,6 +1409,86 @@ function showResults() {
   }
 }
 
+/* ── Radar / Spider chart ── */
+function buildRadarSVG(scores, beforeScores) {
+  const N = COMPETENCIES.length;
+  const cx = 150, cy = 150, R = 115;
+  const angleOffset = -Math.PI / 2;
+
+  function polar(i, r) {
+    const a = angleOffset + (2 * Math.PI * i) / N;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  }
+
+  function polyPoints(values) {
+    return values.map((v, i) => polar(i, (v / 100) * R).join(',')).join(' ');
+  }
+
+  // Grid rings at 20,40,60,80,100%
+  let gridLines = '';
+  for (const pct of [20, 40, 60, 80, 100]) {
+    const r = (pct / 100) * R;
+    const pts = Array.from({length: N}, (_, i) => polar(i, r).join(',')).join(' ');
+    gridLines += `<polygon points="${pts}" fill="none" stroke="#e8e4ee" stroke-width="1"/>`;
+  }
+
+  // Axis spokes
+  let spokes = '';
+  for (let i = 0; i < N; i++) {
+    const [x, y] = polar(i, R);
+    spokes += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#e8e4ee" stroke-width="1"/>`;
+  }
+
+  // Labels
+  let labels = '';
+  for (let i = 0; i < N; i++) {
+    const [lx, ly] = polar(i, R + 22);
+    const comp = COMPETENCIES[i];
+    const anchor = lx < cx - 5 ? 'end' : lx > cx + 5 ? 'start' : 'middle';
+    labels += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="central"
+      fill="${comp.color}" font-size="10" font-weight="600" font-family="Poppins,sans-serif">${comp.icon} ${comp.title}</text>`;
+  }
+
+  // Before polygon (nulmeting, only in eindmeting view)
+  let beforePoly = '';
+  if (beforeScores) {
+    const bVals = beforeScores.competencies.map(c => c.pct);
+    beforePoly = `<polygon points="${polyPoints(bVals)}" fill="rgba(150,120,211,.08)" stroke="var(--lila)" stroke-width="1.5" stroke-dasharray="6,4"/>`;
+  }
+
+  // Current polygon
+  const vals = scores.competencies.map(c => c.pct);
+  const currentPoly = `<polygon points="${polyPoints(vals)}" fill="rgba(46,26,71,.1)" stroke="var(--aubergine)" stroke-width="2.5"/>`;
+
+  // Dots on current
+  let dots = '';
+  for (let i = 0; i < N; i++) {
+    const [dx, dy] = polar(i, (vals[i] / 100) * R);
+    dots += `<circle cx="${dx}" cy="${dy}" r="5" fill="${COMPETENCIES[i].color}" stroke="var(--white)" stroke-width="2"/>`;
+  }
+
+  const legendHTML = beforeScores
+    ? `<div class="radar-legend">
+        <span><i style="background:var(--lila);opacity:.4"></i> Nulmeting</span>
+        <span><i style="background:var(--aubergine)"></i> Eindmeting</span>
+      </div>`
+    : '';
+
+  return `
+    <div class="radar-title">Je competentieprofiel</div>
+    <div class="radar-wrap">
+      <svg class="radar-svg" viewBox="-10 -10 320 320">
+        ${gridLines}
+        ${spokes}
+        ${beforePoly}
+        ${currentPoly}
+        ${dots}
+        ${labels}
+      </svg>
+    </div>
+    ${legendHTML}`;
+}
+
 /* ── Nulmeting Results ── */
 function showNulmetingResults(data) {
   const scores = data.nulmeting.scores;
@@ -1266,6 +1533,8 @@ function showNulmetingResults(data) {
           </div>
           <div class="overall-label">${scores.overallLabel}</div>
         </div>
+
+        ${buildRadarSVG(scores)}
 
         ${compHTML}
 
@@ -1391,6 +1660,8 @@ function showDeltaResults(data) {
             ${deltaSign}${overallDelta}%
           </div>
         </div>
+
+        ${buildRadarSVG(after, before)}
 
         ${compHTML}
 
