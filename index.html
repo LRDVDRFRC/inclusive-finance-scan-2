@@ -123,13 +123,18 @@
     .competency-chip {
       display: inline-flex;
       align-items: center;
-      gap: .35rem;
+      gap: .4rem;
       padding: .35rem .75rem;
       border-radius: 20px;
       font-size: .75rem;
       font-weight: 500;
       background: rgba(150,120,211,.08);
       color: var(--aubergine);
+    }
+    .competency-chip svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
     }
 
     /* ── Forms ── */
@@ -174,8 +179,11 @@
       justify-content: center;
       width: 48px; height: 48px;
       border-radius: 50%;
-      font-size: 1.4rem;
       flex-shrink: 0;
+    }
+    .pillar-number svg {
+      width: 24px;
+      height: 24px;
     }
     .pillar-header-text h2 { margin-bottom: .1rem; font-size: 1.25rem; }
     .pillar-header-text .pillar-sub {
@@ -497,8 +505,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
       flex-shrink: 0;
+    }
+    .comp-icon svg {
+      width: 18px;
+      height: 18px;
     }
     .comp-result-info { flex: 1; }
     .comp-result-name { font-weight: 600; font-size: .82rem; }
@@ -787,11 +798,19 @@
    DATA
    ══════════════════════════════════════ */
 
+const ICONS = {
+  bias: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>`,
+  ander: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  communicatie: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>`,
+  groei: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+  kansen: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+};
+
 const COMPETENCIES = [
   {
     id: 'bias', number: 1, title: 'Bewust van bias',
     module: 'Geloven',
-    icon: '\u{1FA9E}', color: '#9678D3',
+    icon: ICONS.bias, color: '#9678D3',
     intro: 'Inclusief financieren begint bij jezelf. Hoe bewust ben je van je eigen aannames en vooroordelen?',
     statements: [
       'Ik weet welke aannames en vooroordelen ik heb over verschillende typen ondernemers.',
@@ -813,7 +832,7 @@ const COMPETENCIES = [
   {
     id: 'ander', number: 2, title: 'De ander centraal',
     module: 'Snappen',
-    icon: '\u{1F91D}', color: '#D35D54',
+    icon: ICONS.ander, color: '#D35D54',
     intro: 'Een inclusieve financier luistert eerst en oordeelt later. Hoe goed stel jij je op in de interactie met ondernemers?',
     statements: [
       'Ik stel eerst vragen om de ondernemer écht te begrijpen, voordat ik mijn eigen verhaal begin.',
@@ -836,7 +855,7 @@ const COMPETENCIES = [
   {
     id: 'communicatie', number: 3, title: 'Inclusief communiceren',
     module: 'Kunnen',
-    icon: '\u{1F4AC}', color: '#C06B00',
+    icon: ICONS.communicatie, color: '#C06B00',
     intro: 'De manier waarop je communiceert bepaalt wie zich welkom voelt. Hoe inclusief is jouw communicatie?',
     statements: [
       'Ik let bewust op inclusief taalgebruik in mijn gesprekken en schriftelijke communicatie.',
@@ -858,7 +877,7 @@ const COMPETENCIES = [
   {
     id: 'groei', number: 4, title: 'Doorgroei & ontwikkeling',
     module: 'Kunnen + Steun',
-    icon: '\u{1F331}', color: '#6B9B37',
+    icon: ICONS.groei, color: '#6B9B37',
     intro: 'Verandering vraagt dat je blijft leren en jezelf durft uit te dagen. Hoe actief werk je aan je eigen ontwikkeling?',
     statements: [
       'Ik vraag actief feedback aan collega’s en klanten over mijn manier van werken.',
@@ -880,7 +899,7 @@ const COMPETENCIES = [
   {
     id: 'kansen', number: 5, title: 'Kansen benutten',
     module: 'Geloven + Steun → Doen',
-    icon: '\u{1F680}', color: '#2E1A47',
+    icon: ICONS.kansen, color: '#2E1A47',
     intro: 'Inclusief financieren is niet alleen het juiste — het is ook slim. Zie en benut jij de kansen?',
     statements: [
       'Ik zie concrete commerciële kansen in het beter bereiken en bedienen van diverse ondernemers.',
@@ -1118,7 +1137,7 @@ function showIdentify() {
           <input type="email" id="emailInput" placeholder="naam@organisatie.nl" value="${userEmail}" oninput="onIdentifyInput()">
         </div>
         <div class="returning-banner" id="returningBanner">
-          \u{1F44B} <strong>Welkom terug!</strong> Je gaat nu de eindmeting doen.
+          <strong>Welkom terug!</strong> Je gaat nu de eindmeting doen.
           Na afloop zie je direct hoeveel je gegroeid bent.
         </div>
         <div class="btn-row">
@@ -1199,7 +1218,7 @@ function showCompetencyIntro(ci) {
       <div class="card hidden pillar-intro">
         <div class="section-label">Competentie ${comp.number} van 5</div>
         <div class="pillar-header">
-          <div class="pillar-number" style="background:${bgColor};font-size:1.4rem">${comp.icon}</div>
+          <div class="pillar-number" style="background:${bgColor};color:${comp.color}">${comp.icon}</div>
           <div class="pillar-header-text">
             <h2>${comp.title}</h2>
             <p class="pillar-sub">${comp.statements.length} stellingen</p>
@@ -1207,7 +1226,7 @@ function showCompetencyIntro(ci) {
         </div>
         <p class="intro-text">${comp.intro}</p>
         <div class="module-link" style="background:${comp.color}15;color:${comp.color}">
-          \u{1F393} Leerdoel in Module: ${comp.module}
+          Leerdoel in Module: ${comp.module}
         </div>
         <div class="btn-row">
           <button class="btn btn-secondary" onclick="${prevAction}">← Terug</button>
@@ -1475,7 +1494,7 @@ function buildRadarSVG(scores, beforeScores) {
     const comp = COMPETENCIES[i];
     const anchor = lx < cx - 5 ? 'end' : lx > cx + 5 ? 'start' : 'middle';
     labels += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="central"
-      fill="${comp.color}" font-size="10" font-weight="600" font-family="Poppins,sans-serif">${comp.icon} ${comp.title}</text>`;
+      fill="${comp.color}" font-size="10" font-weight="600" font-family="Poppins,sans-serif">${comp.title}</text>`;
   }
 
   // Before polygon (nulmeting, only in eindmeting view)
@@ -1531,10 +1550,10 @@ function showNulmetingResults(data) {
       compHTML += `
         <div class="comp-result">
           <div class="comp-result-header">
-            <div class="comp-icon" style="background:${comp.color}15">${comp.icon}</div>
+            <div class="comp-icon" style="background:${comp.color}15;color:${comp.color}">${comp.icon}</div>
             <div class="comp-result-info">
               <div class="comp-result-name">${comp.title}</div>
-              <div class="comp-result-module">\u{1F393} Module: ${comp.module}</div>
+              <div class="comp-result-module">Module: ${comp.module}</div>
             </div>
             <div class="comp-result-score" style="color:${comp.color}">${cs.pct}%</div>
           </div>
@@ -1573,7 +1592,7 @@ function showNulmetingResults(data) {
         </div>
 
         <div class="saved-notice">
-          <span>✅</span>
+          <span style="color:var(--green-dark);font-weight:700">&#10003;</span>
           Je resultaten zijn automatisch opgeslagen. Gebruik hetzelfde e-mailadres
           voor de eindmeting om je groei te zien.
         </div>
@@ -1632,10 +1651,10 @@ function showDeltaResults(data) {
       compHTML += `
         <div class="comp-delta-result">
           <div class="comp-delta-header">
-            <div class="comp-icon" style="background:${comp.color}15">${comp.icon}</div>
+            <div class="comp-icon" style="background:${comp.color}15;color:${comp.color}">${comp.icon}</div>
             <div class="comp-delta-info">
               <div class="comp-delta-name">${comp.title}</div>
-              <div class="comp-delta-module">\u{1F393} Module: ${comp.module}</div>
+              <div class="comp-delta-module">Module: ${comp.module}</div>
             </div>
             <div class="comp-delta-badge">
               <span class="delta-badge ${dClass}" style="font-size:.78rem;padding:.25rem .6rem">${dSign}${delta}%</span>
@@ -1700,12 +1719,12 @@ function showDeltaResults(data) {
 
         ${maxGrowth.delta > 0 ? `
         <div class="growth-highlight">
-          \u{1F31F} <strong>Grootste groei: ${growthComp.title}</strong> (+${maxGrowth.delta}%)
+          <strong>Grootste groei: ${growthComp.title}</strong> (+${maxGrowth.delta}%)
           <br>Dit heb je geleerd in Module: ${growthComp.module}.
         </div>` : ''}
 
         <div class="saved-notice">
-          <span>✅</span>
+          <span style="color:var(--green-dark);font-weight:700">&#10003;</span>
           Je eindmeting is opgeslagen naast je nulmeting.
           Je kunt dit venster sluiten of de resultaten delen met je leidinggevende.
         </div>
