@@ -771,6 +771,7 @@ function getDeltaLevel(delta) {
    ══════════════════════════════════════ */
 let userName = '';
 let userEmail = '';
+let userOrg = '';
 let isEindmeting = false;
 let existingData = null;
 
@@ -838,8 +839,9 @@ function loadExistingData(email) {
 function saveData() {
   const scores = calculateScores();
   const key = storageKey(userEmail);
-  let data = loadExistingData(userEmail) || { name: userName, email: userEmail };
+  let data = loadExistingData(userEmail) || { name: userName, email: userEmail, organisation: userOrg };
   data.name = userName;
+  data.organisation = userOrg;
 
   const measurement = {
     date: new Date().toISOString(),
@@ -943,6 +945,10 @@ function showIdentify() {
           <input type="text" id="nameInput" placeholder="Je volledige naam" value="${userName}" oninput="onIdentifyInput()">
         </div>
         <div class="form-group">
+          <label for="orgInput">Organisatie</label>
+          <input type="text" id="orgInput" placeholder="Naam van je organisatie" value="${userOrg}" oninput="onIdentifyInput()">
+        </div>
+        <div class="form-group">
           <label for="emailInput">E-mailadres</label>
           <input type="email" id="emailInput" placeholder="naam@organisatie.nl" value="${userEmail}" oninput="onIdentifyInput()">
         </div>
@@ -962,11 +968,12 @@ function showIdentify() {
 
 function onIdentifyInput() {
   const name = document.getElementById('nameInput').value.trim();
+  const org = document.getElementById('orgInput').value.trim();
   const email = document.getElementById('emailInput').value.trim();
   const btn = document.getElementById('identifyNext');
   const banner = document.getElementById('returningBanner');
 
-  const valid = name.length >= 2 && email.includes('@') && email.includes('.');
+  const valid = name.length >= 2 && org.length >= 2 && email.includes('@') && email.includes('.');
   btn.disabled = !valid;
 
   // Check for existing nulmeting
@@ -988,6 +995,7 @@ function onIdentifyInput() {
 
 function onIdentifySubmit() {
   userName = document.getElementById('nameInput').value.trim();
+  userOrg = document.getElementById('orgInput').value.trim();
   userEmail = document.getElementById('emailInput').value.trim();
   const existing = loadExistingData(userEmail);
   if (existing && existing.nulmeting) {
