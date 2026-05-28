@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code-V · Persoonlijk Self-Assessment Inclusief Financieren</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --aubergine: #2E1A47;
+      --lila: #9678D3;
+      --lila-light: #b9a4e0;
+      --grey: #F2F2F2;
+      --green: #D0DBBB;
+      --green-dark: #6B9B37;
+      --terracotta: #D35D54;
+      --orange: #C06B00;
+      --white: #FFFFFF;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--grey);
+      color: var(--aubergine);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--lila), var(--terracotta));
+      transition: width .5s ease;
+      z-index: 100;
+    }
+
+    .scan-container {
+      width: 100%;
+      max-width: 680px;
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 4px 24px rgba(46,26,71,.08);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .card.active { opacity: 1; transform: translateY(0); }
+    .card.exit { opacity: 0; transform: translateY(-30px); }
+    .card.hidden { display: none; }
+
+    .logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--aubergine);
+      margin-bottom: .5rem;
+    }
+    .logo span { color: var(--lila); }
+
+    .welcome h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 1rem;
+    }
+    .welcome p, .intro-text {
+      font-size: .95rem;
+      line-height: 1.7;
+      color: #555;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-label {
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--lila);
+      margin-bottom: .75rem;
+    }
+    h2 { font-size: 1.35rem; margin-bottom: .75rem; }
+    h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+
+    /* ── Highlight boxes ── */
+    .highlight-box {
+      background: linear-gradient(135deg, var(--aubergine), #4a2d6e);
+      color: var(--white);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      font-size: .9rem;
+      line-height: 1.6;
+    }
+    .highlight-box strong { color: var(--lila-light); font-size: 1.1rem; }
+
+    /* ── Competency chips ── */
+    .competency-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 1.25rem;
+    }
+    .competency-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .35rem .75rem;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 500;
+      background: rgba(150,120,211,.08);
+      color: var(--aubergine);
+    }
+
+    /* ── Forms ── */
+    .form-group { text-align: left; margin-bottom: .85rem; }
+    .form-group label { display: block; font-size: .78rem; font-weight: 500; color: #666; margin-bottom: .3rem; }
+    .form-group input {
+      width: 100%;
+      padding: .65rem .9rem;
+      border: 2px solid #e8e4ee;
+      border-radius: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-size: .88rem;
+      color: var(--aubergine);
+      transition: border-color .2s;
+    }
+    .form-group input:focus { outline: none; border-color: var(--lila); }
+
+    .returning-banner {
+      background: linear-gradient(135deg, #6B9B37, #8ab85a);
+      color: var(--white);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      font-size: .85rem;
+      line-height: 1.6;
+      display: none;
+    }
+    .returning-banner.visible { display: block; }
+    .returning-banner strong { color: #e8f5d8; }
+
+    /* ── Pillar intro ── */
+    .pillar-intro { text-align: left; }
+    .pillar-header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .pillar-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .pillar-header-text h2 { margin-bottom: .1rem; font-size: 1.25rem; }
+    .pillar-header-text .pillar-sub {
+      font-size: .82rem;
+      font-weight: 500;
+      margin: 0;
+      color: #888;
+    }
+    .pillar-intro .intro-text { font-size: .9rem; margin-bottom: 1rem; }
+
+    .module-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .4rem .8rem;
+      border-radius: 8px;
+      font-size: .78rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Question ── */
+    .question-meta {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: 1rem;
+      font-size: .78rem;
+      color: var(--lila);
+      font-weight: 500;
+      flex-wrap: wrap;
+    }
+    .question-meta .pill {
+      background: rgba(150,120,211,.12);
+      padding: .2rem .65rem;
+      border-radius: 20px;
+    }
+    .question-meta .comp-pill {
+      padding: .2rem .65rem;
+      border-radius: 20px;
+      font-size: .72rem;
+    }
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.5;
+      margin-bottom: .75rem;
+    }
+
+    /* ── Horizontal dot scale ── */
+    .scale-wrap {
+      margin-bottom: .5rem;
+    }
+    .scale-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: .5rem;
+      font-size: .72rem;
+      color: #999;
+      font-weight: 500;
+    }
+    .scale-track {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6px;
+      height: 56px;
+    }
+    .scale-track::before {
+      content: '';
+      position: absolute;
+      left: 6px; right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 3px;
+      background: #e8e4ee;
+      border-radius: 2px;
+      z-index: 0;
+    }
+    .scale-dot {
+      position: relative;
+      z-index: 1;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 3px solid #d4cde0;
+      background: var(--white);
+      cursor: pointer;
+      transition: all .25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 600;
+      color: #bbb;
+      font-family: 'Poppins', sans-serif;
+    }
+    .scale-dot:hover {
+      border-color: var(--lila);
+      color: var(--lila);
+      transform: scale(1.1);
+    }
+    .scale-dot.selected {
+      border-color: var(--lila);
+      background: var(--lila);
+      color: var(--white);
+      transform: scale(1.15);
+      box-shadow: 0 3px 12px rgba(150,120,211,.35);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      padding: .8rem 1.75rem;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Poppins', sans-serif;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .25s ease;
+    }
+    .btn-primary { background: var(--aubergine); color: var(--white); }
+    .btn-primary:hover { background: #3d2560; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(46,26,71,.25); }
+    .btn-primary:disabled { background: #b0a3c0; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary { background: transparent; color: var(--lila); font-weight: 500; padding: .8rem .75rem; }
+    .btn-secondary:hover { color: var(--aubergine); }
+    .btn-cta { background: var(--terracotta); color: var(--white); }
+    .btn-cta:hover { background: #c04e44; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(211,93,84,.3); }
+    .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.75rem; }
+
+    /* ── Results ── */
+    .results-header { text-align: center; margin-bottom: 1.5rem; }
+    .results-header h1 { font-size: 1.5rem; margin-bottom: .5rem; }
+    .results-header p { font-size: .88rem; color: #666; line-height: 1.6; }
+
+    .overall-circle {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 2rem;
+      color: var(--white);
+      margin: 1rem auto;
+      background: linear-gradient(135deg, var(--aubergine), #4a2d6e);
+      box-shadow: 0 6px 24px rgba(46,26,71,.25);
+    }
+    .overall-circle small {
+      font-size: .6rem;
+      font-weight: 400;
+      opacity: .85;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: .15rem;
+    }
+    .overall-label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--aubergine);
+      margin-bottom: 1.5rem;
+    }
+
+    .comp-result {
+      padding: .85rem 0;
+      border-bottom: 1px solid #eee;
+    }
+    .comp-result:last-child { border-bottom: none; }
+    .comp-result-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .5rem;
+    }
+    .comp-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .comp-result-info { flex: 1; }
+    .comp-result-name { font-weight: 600; font-size: .82rem; }
+    .comp-result-module { font-size: .7rem; color: #999; margin-top: .1rem; }
+    .comp-result-score { font-weight: 700; font-size: .9rem; min-width: 40px; text-align: right; }
+
+    .comp-bar-track {
+      width: 100%; height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: .4rem;
+    }
+    .comp-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease .3s;
+      width: 0;
+    }
+
+    .comp-tip {
+      background: var(--grey);
+      border-radius: 10px;
+      padding: .75rem 1rem;
+      margin-top: .5rem;
+      font-size: .8rem;
+      line-height: 1.55;
+      color: #555;
+    }
+    .comp-tip strong { color: var(--aubergine); }
+
+    .result-insight {
+      background: linear-gradient(135deg, var(--aubergine), #4a2d6e);
+      color: var(--white);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      margin-top: 1rem;
+      font-size: .82rem;
+      line-height: 1.7;
+    }
+    .result-insight strong { color: var(--lila-light); }
+
+    .saved-notice {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: rgba(107,155,55,.1);
+      border-radius: 10px;
+      padding: .75rem 1rem;
+      margin-top: 1rem;
+      font-size: .8rem;
+      color: var(--green-dark);
+      font-weight: 500;
+    }
+
+    /* ── Delta / Eindmeting results ── */
+    .delta-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .delta-header h1 { font-size: 1.5rem; margin-bottom: .5rem; }
+
+    .delta-overall {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+      flex-wrap: wrap;
+    }
+    .delta-score-block {
+      text-align: center;
+    }
+    .delta-score-circle {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--white);
+      margin-bottom: .3rem;
+    }
+    .delta-score-circle small {
+      font-size: .55rem;
+      font-weight: 400;
+      opacity: .85;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .delta-score-label {
+      font-size: .75rem;
+      font-weight: 500;
+      color: #888;
+    }
+    .delta-arrow {
+      font-size: 1.8rem;
+      color: var(--lila);
+    }
+    .delta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .4rem .9rem;
+      border-radius: 20px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .delta-badge.positive {
+      background: rgba(107,155,55,.12);
+      color: var(--green-dark);
+    }
+    .delta-badge.neutral {
+      background: rgba(150,120,211,.1);
+      color: var(--lila);
+    }
+    .delta-badge.negative {
+      background: rgba(211,93,84,.1);
+      color: var(--terracotta);
+    }
+
+    .comp-delta-result {
+      padding: 1rem 0;
+      border-bottom: 1px solid #eee;
+    }
+    .comp-delta-result:last-child { border-bottom: none; }
+
+    .comp-delta-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .6rem;
+    }
+    .comp-delta-info { flex: 1; }
+    .comp-delta-name { font-weight: 600; font-size: .82rem; }
+    .comp-delta-module { font-size: .7rem; color: #999; margin-top: .1rem; }
+    .comp-delta-badge {
+      font-size: .8rem;
+      font-weight: 700;
+      min-width: 48px;
+      text-align: right;
+    }
+
+    .dual-bar-wrap { margin-top: .3rem; }
+    .dual-bar-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .3rem;
+    }
+    .dual-bar-label {
+      font-size: .65rem;
+      font-weight: 500;
+      color: #999;
+      width: 60px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .dual-bar-track {
+      flex: 1;
+      height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .dual-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease .3s;
+      width: 0;
+    }
+    .dual-bar-fill.before { opacity: .35; }
+    .dual-bar-value {
+      font-size: .75rem;
+      font-weight: 600;
+      min-width: 32px;
+    }
+
+    .growth-highlight {
+      background: linear-gradient(135deg, #6B9B37, #8ab85a);
+      color: var(--white);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      margin-top: 1.25rem;
+      font-size: .85rem;
+      line-height: 1.6;
+    }
+    .growth-highlight strong { color: #e8f5d8; }
+
+    .comp-delta-feedback {
+      background: var(--grey);
+      border-radius: 10px;
+      padding: .75rem 1rem;
+      margin-top: .5rem;
+      font-size: .8rem;
+      line-height: 1.55;
+      color: #555;
+    }
+    .comp-delta-feedback strong { color: var(--aubergine); }
+
+    /* ── Feedback questions (eindmeting only) ── */
+    .feedback-option {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .7rem 1rem;
+      border: 2px solid #e8e4ee;
+      border-radius: 12px;
+      background: var(--white);
+      font-family: 'Poppins', sans-serif;
+      font-size: .85rem;
+      color: var(--aubergine);
+      cursor: pointer;
+      transition: all .2s ease;
+      margin-bottom: .5rem;
+    }
+    .feedback-option:hover { border-color: var(--lila); background: rgba(150,120,211,.04); }
+    .feedback-option.selected { border-color: var(--lila); background: rgba(150,120,211,.1); }
+    .feedback-dot {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid #d4cde0;
+      flex-shrink: 0;
+      transition: all .2s ease;
+    }
+    .feedback-option.selected .feedback-dot {
+      border-color: var(--lila);
+      background: var(--lila);
+      box-shadow: inset 0 0 0 3px var(--white);
+    }
+
+    /* ── CTA section ── */
+    .cta-section { text-align: center; margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid #eee; }
+    .cta-section h3 { font-size: 1.05rem; margin-bottom: .4rem; }
+    .cta-section p { font-size: .82rem; color: #666; margin-bottom: 1.1rem; line-height: 1.6; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .scan-container { padding: 1.5rem 1rem; }
+      .card { padding: 1.75rem 1.25rem; }
+      .welcome h1 { font-size: 1.35rem; }
+      .scale-dot { width: 48px; height: 48px; font-size: .82rem; }
+      .delta-overall { gap: .75rem; }
+      .delta-score-circle { width: 68px; height: 68px; font-size: 1.3rem; }
+      .overall-circle { width: 100px; height: 100px; font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="scan-container" id="app"></div>
+
+<script>
+/* ══════════════════════════════════════
+   DATA
+   ══════════════════════════════════════ */
+
+const COMPETENCIES = [
+  {
+    id: 'bias', number: 1, title: 'Bewust van bias',
+    module: 'Geloven',
+    icon: '\u{1FA9E}', color: '#9678D3',
+    intro: 'Inclusief financieren begint bij jezelf. Hoe bewust ben je van je eigen aannames en vooroordelen?',
+    statements: [
+      'Ik weet welke aannames en vooroordelen ik heb over verschillende typen ondernemers.',
+      'Ik ben me ervan bewust dat mijn eigen ervaringen en achtergrond mijn oordeel over ondernemers beïnvloeden.',
+      'Ik herken situaties waarin ik onbewust anders reageer op basis van geslacht, achtergrond of verschijning van een ondernemer.',
+      'Ik durf mijn eigen vooroordelen te benoemen en bespreek deze met collega’s.',
+    ],
+    tips: {
+      low: 'Bewustwording is de eerste stap. In Module Geloven leer je je eigen aannames herkennen en bespreekbaar maken.',
+      mid: 'Je hebt al enig inzicht in je eigen bias. Module Geloven helpt je dit verder te verdiepen en om te zetten in actie.',
+      high: 'Sterk! Je bent je goed bewust van je eigen vooroordelen. Blijf dit scherp houden en help collega’s hetzelfde te doen.',
+    },
+    deltaFeedback: {
+      positive: 'Je bewustzijn van eigen bias is gegroeid. Dit is de basis voor al het andere.',
+      neutral: 'Je bewustzijn was al goed en is stabiel gebleven. Blijf alert op nieuwe blinde vlekken.',
+      negative: 'Soms daalt de score na training omdat je je nu méér bewust bent van wat je niet weet — dat is juist een teken van groei.',
+    }
+  },
+  {
+    id: 'ander', number: 2, title: 'De ander centraal',
+    module: 'Snappen',
+    icon: '\u{1F91D}', color: '#D35D54',
+    intro: 'Een inclusieve financier luistert eerst en oordeelt later. Hoe goed stel jij je op in de interactie met ondernemers?',
+    statements: [
+      'Ik stel eerst vragen om de ondernemer écht te begrijpen, voordat ik mijn eigen verhaal begin.',
+      'Ik vraag actief naar de beweegredenen van de klant en ga niet uit van mijn eigen aannames.',
+      'Ik zorg dat klanten en collega’s zich veilig genoeg voelen om belangrijke zaken te delen.',
+      'Ik probeer me in te leven in de ondernemer, ook als diens situatie ver van mijn eigen ervaring af staat.',
+      'Ik beoordeel financieringsaanvragen op inhoud en potentieel, niet op hoe vertrouwd het profiel aanvoelt.',
+    ],
+    tips: {
+      low: 'In Module Snappen leer je technieken om echt te luisteren en de ondernemer centraal te stellen.',
+      mid: 'Je bent op de goede weg. Module Snappen verdiept je vaardigheden in empathisch en onbevooroordeeld luisteren.',
+      high: 'Uitstekend! Je stelt de ander al centraal. Deel je aanpak met collega’s — dat versterkt het hele team.',
+    },
+    deltaFeedback: {
+      positive: 'Mooi! Je vermogen om de ondernemer centraal te stellen is zichtbaar gegroeid.',
+      neutral: 'Stabiel — je was hier al sterk in. Probeer het nu ook in uitdagende gesprekken vast te houden.',
+      negative: 'Deze competentie vraagt continue aandacht. Overweeg om peer-feedback te vragen aan een collega.',
+    }
+  },
+  {
+    id: 'communicatie', number: 3, title: 'Inclusief communiceren',
+    module: 'Kunnen',
+    icon: '\u{1F4AC}', color: '#C06B00',
+    intro: 'De manier waarop je communiceert bepaalt wie zich welkom voelt. Hoe inclusief is jouw communicatie?',
+    statements: [
+      'Ik let bewust op inclusief taalgebruik in mijn gesprekken en schriftelijke communicatie.',
+      'Ik pas mijn communicatiestijl aan op de persoon tegenover mij, zonder te stereotyperen.',
+      'Ik vermijd jargon en check of de ander mijn boodschap echt begrepen heeft.',
+      'Ik herken wanneer communicatiemiddelen of -kanalen onbedoeld bepaalde groepen uitsluiten.',
+    ],
+    tips: {
+      low: 'Module Kunnen biedt praktische handvatten voor inclusieve communicatie in je dagelijks werk.',
+      mid: 'Je bent bewust bezig met je communicatie. Module Kunnen helpt je de blinde vlekken te vinden.',
+      high: 'Je communiceert al bewust inclusief. Help je team door goede voorbeelden te delen en feedback te geven.',
+    },
+    deltaFeedback: {
+      positive: 'Je inclusieve communicatie is verbeterd — dit merk je direct in klantgesprekken.',
+      neutral: 'Je communicatie was al op niveau. Probeer nu ook systeemniveau te bekijken: zijn jullie kanalen inclusief?',
+      negative: 'Communicatie is een vaardigheid die oefening vraagt. Probeer één concreet punt per week bewust toe te passen.',
+    }
+  },
+  {
+    id: 'groei', number: 4, title: 'Doorgroei & ontwikkeling',
+    module: 'Kunnen + Steun',
+    icon: '\u{1F331}', color: '#6B9B37',
+    intro: 'Verandering vraagt dat je blijft leren en jezelf durft uit te dagen. Hoe actief werk je aan je eigen ontwikkeling?',
+    statements: [
+      'Ik vraag actief feedback aan collega’s en klanten over mijn manier van werken.',
+      'Ik weet wat ik wil ontwikkelen om inclusiever te financieren en ben hier actief mee bezig.',
+      'Ik deel mijn inzichten en ervaringen over inclusief financieren met collega’s.',
+      'Ik ben betrokken bij de ontwikkeling van mijn collega’s op het gebied van inclusief financieren.',
+    ],
+    tips: {
+      low: 'Ontwikkeling begint met bewustzijn. De Modules Kunnen en Steun geven je concrete handvatten om te groeien.',
+      mid: 'Je werkt al aan je ontwikkeling. De leergang helpt je dit structureel te maken en collega’s mee te nemen.',
+      high: 'Je bent actief bezig met groei én helpt anderen. Dit is precies het leiderschap dat nodig is.',
+    },
+    deltaFeedback: {
+      positive: 'Je investeert meer in je eigen ontwikkeling — en dat van je team. Dat is de motor van verandering.',
+      neutral: 'Je ontwikkeling was al actief. Probeer nu een concrete leerdoel voor de komende maand te stellen.',
+      negative: 'Groei gaat niet altijd lineair. Belangrijkst is dat je blijft investeren in leren en feedback vragen.',
+    }
+  },
+  {
+    id: 'kansen', number: 5, title: 'Kansen benutten',
+    module: 'Geloven + Steun → Doen',
+    icon: '\u{1F680}', color: '#2E1A47',
+    intro: 'Inclusief financieren is niet alleen het juiste — het is ook slim. Zie en benut jij de kansen?',
+    statements: [
+      'Ik zie concrete commerciële kansen in het beter bereiken en bedienen van diverse ondernemers.',
+      'Ik vertel klanten en collega’s actief waarom inclusief financieren belangrijk én waardevol is.',
+      'Ik ga actief aan de slag met verbeterideeën en weet waar ik deze kan indienen.',
+      'Ik draag actief bij aan het bevorderen van inclusiviteit binnen mijn team of afdeling.',
+      'Ik geloof dat inclusief financieren een strategische kans is, niet alleen een verplichting.',
+    ],
+    tips: {
+      low: 'In de Modules Geloven en Steun leer je de business case zien én hoe je kansen concreet kunt benutten.',
+      mid: 'Je ziet kansen maar mist soms de stap naar actie. De leergang helpt je van inzicht naar impact.',
+      high: 'Je bent een echte ambassadeur! Blijf kansen zichtbaar maken en anderen inspireren om mee te doen.',
+    },
+    deltaFeedback: {
+      positive: 'Je ziet en benut meer kansen — dat is precies waar het om draait: van weten naar doen.',
+      neutral: 'Je was hier al actief. Probeer nu een collega mee te nemen in jouw aanpak.',
+      negative: 'Kansen benutten vraagt durf en steun. Bespreek met je leidinggevende hoe je ruimte kunt krijgen.',
+    }
+  }
+];
+
+const TOTAL_STATEMENTS = COMPETENCIES.reduce((s, c) => s + c.statements.length, 0); // 22
+
+const SCORE_LABELS = [
+  { max: 30, label: 'Beginnend' },
+  { max: 50, label: 'Bewust wordend' },
+  { max: 70, label: 'Op weg' },
+  { max: 85, label: 'Gevorderd' },
+  { max: 100, label: 'Ambassadeur' },
+];
+
+function getScoreLabel(pct) {
+  for (const s of SCORE_LABELS) {
+    if (pct <= s.max) return s.label;
+  }
+  return 'Ambassadeur';
+}
+
+function getTipLevel(pct) {
+  if (pct <= 40) return 'low';
+  if (pct <= 70) return 'mid';
+  return 'high';
+}
+
+function getDeltaLevel(delta) {
+  if (delta > 0) return 'positive';
+  if (delta < 0) return 'negative';
+  return 'neutral';
+}
+
+/* ══════════════════════════════════════
+   STATE
+   ══════════════════════════════════════ */
+let userName = '';
+let userEmail = '';
+let isEindmeting = false;
+let existingData = null;
+
+const answers = {}; // key: 'compIdx-stmtIdx', value: 1-5
+const feedbackAnswers = {}; // 'q0', 'q1'
+
+let currentStep = 0;
+
+// Total steps: welcome(1) + identify(1) + (comp intro + comp statements)*5 + results(1) [+ feedback(2) for eindmeting]
+function getTotalSteps() {
+  let total = 2; // welcome + identify
+  for (const comp of COMPETENCIES) {
+    total += 1 + comp.statements.length; // intro + statements
+  }
+  if (isEindmeting) total += 2; // 2 feedback questions
+  total += 1; // results
+  return total;
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════ */
+const app = document.getElementById('app');
+const bar = document.getElementById('progressBar');
+
+function updateProgress() {
+  bar.style.width = `${(currentStep / getTotalSteps()) * 100}%`;
+}
+
+function transition(buildNext) {
+  const current = app.querySelector('.card');
+  if (current) {
+    current.classList.remove('active');
+    current.classList.add('exit');
+    setTimeout(() => {
+      app.innerHTML = '';
+      buildNext();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      requestAnimationFrame(() => {
+        const card = app.querySelector('.card');
+        if (card) { card.classList.remove('hidden'); requestAnimationFrame(() => card.classList.add('active')); }
+      });
+    }, 300);
+  } else {
+    buildNext();
+    requestAnimationFrame(() => {
+      const card = app.querySelector('.card');
+      if (card) { card.classList.remove('hidden'); requestAnimationFrame(() => card.classList.add('active')); }
+    });
+  }
+}
+
+function storageKey(email) {
+  return 'codev-scan2-' + email.toLowerCase().trim();
+}
+
+function loadExistingData(email) {
+  try {
+    const raw = localStorage.getItem(storageKey(email));
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function saveData() {
+  const scores = calculateScores();
+  const key = storageKey(userEmail);
+  let data = loadExistingData(userEmail) || { name: userName, email: userEmail };
+  data.name = userName;
+
+  const measurement = {
+    date: new Date().toISOString(),
+    answers: { ...answers },
+    scores: scores,
+  };
+
+  if (isEindmeting) {
+    measurement.feedback = { ...feedbackAnswers };
+    data.eindmeting = measurement;
+  } else {
+    data.nulmeting = measurement;
+  }
+
+  localStorage.setItem(key, JSON.stringify(data));
+  return data;
+}
+
+function calculateScores() {
+  const compScores = [];
+  for (let ci = 0; ci < COMPETENCIES.length; ci++) {
+    const comp = COMPETENCIES[ci];
+    let sum = 0;
+    let count = 0;
+    for (let si = 0; si < comp.statements.length; si++) {
+      const val = answers[`${ci}-${si}`];
+      if (val) { sum += val; count++; }
+    }
+    const avg = count > 0 ? sum / count : 0;
+    const pct = Math.round(((avg - 1) / 4) * 100); // 1-5 mapped to 0-100
+    compScores.push({ id: comp.id, avg, pct, label: getScoreLabel(pct) });
+  }
+  const overallPct = Math.round(compScores.reduce((s, c) => s + c.pct, 0) / compScores.length);
+  return { competencies: compScores, overall: overallPct, overallLabel: getScoreLabel(overallPct) };
+}
+
+// Count how many statements have been answered so far
+function getAnsweredCount() {
+  return Object.keys(answers).length;
+}
+
+// Get the global statement index for a given comp + statement index
+function getGlobalStatementIndex(ci, si) {
+  let idx = 0;
+  for (let i = 0; i < ci; i++) {
+    idx += COMPETENCIES[i].statements.length;
+  }
+  return idx + si;
+}
+
+/* ══════════════════════════════════════
+   1. WELCOME
+   ══════════════════════════════════════ */
+function showWelcome() {
+  currentStep = 0;
+  updateProgress();
+  transition(() => {
+    app.innerHTML = `
+      <div class="card hidden welcome">
+        <div class="logo">CODE<span>-V</span></div>
+        <h1>Hoe inclusief financier jij?</h1>
+        <p style="font-weight:500;color:var(--aubergine);font-size:.88rem;margin-bottom:.5rem">
+          Persoonlijk Self-Assessment voor de Leergang Inclusief Financieren
+        </p>
+        <p>
+          Deze scan meet je persoonlijke competenties op <strong>5 gebieden</strong>
+          die centraal staan in de leergang. Je vult hem in als nulmeting vóór de
+          leergang en als eindmeting erna — zo zie je direct hoeveel je gegroeid bent.
+        </p>
+        <div class="competency-chips">
+          ${COMPETENCIES.map(c => `<span class="competency-chip"><span>${c.icon}</span> ${c.title}</span>`).join('')}
+        </div>
+        <div class="highlight-box">
+          <strong>22 stellingen</strong> over jouw houding, vaardigheden en gedrag
+          rondom inclusief financieren — eerlijk en zonder oordeel.
+          <br><small style="opacity:.7">± 5 minuten</small>
+        </div>
+        <div class="btn-row" style="justify-content:flex-end">
+          <button class="btn btn-primary" onclick="showIdentify()">Start de scan →</button>
+        </div>
+      </div>`;
+  });
+}
+
+/* ══════════════════════════════════════
+   2. IDENTIFY
+   ══════════════════════════════════════ */
+function showIdentify() {
+  currentStep = 1;
+  updateProgress();
+  transition(() => {
+    app.innerHTML = `
+      <div class="card hidden">
+        <div class="section-label">Over jou</div>
+        <h2>Wie ben je?</h2>
+        <p class="intro-text" style="font-size:.88rem">
+          We gebruiken je naam en e-mail om je nulmeting en eindmeting aan elkaar te koppelen.
+        </p>
+        <div class="form-group">
+          <label for="nameInput">Naam</label>
+          <input type="text" id="nameInput" placeholder="Je volledige naam" value="${userName}" oninput="onIdentifyInput()">
+        </div>
+        <div class="form-group">
+          <label for="emailInput">E-mailadres</label>
+          <input type="email" id="emailInput" placeholder="naam@organisatie.nl" value="${userEmail}" oninput="onIdentifyInput()">
+        </div>
+        <div class="returning-banner" id="returningBanner">
+          \u{1F44B} <strong>Welkom terug!</strong> Je gaat nu de eindmeting doen.
+          Na afloop zie je direct hoeveel je gegroeid bent.
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="showWelcome()">← Terug</button>
+          <button class="btn btn-primary" id="identifyNext" disabled onclick="onIdentifySubmit()">Verder →</button>
+        </div>
+      </div>`;
+    // restore state
+    onIdentifyInput();
+  });
+}
+
+function onIdentifyInput() {
+  const name = document.getElementById('nameInput').value.trim();
+  const email = document.getElementById('emailInput').value.trim();
+  const btn = document.getElementById('identifyNext');
+  const banner = document.getElementById('returningBanner');
+
+  const valid = name.length >= 2 && email.includes('@') && email.includes('.');
+  btn.disabled = !valid;
+
+  // Check for existing nulmeting
+  if (valid) {
+    const existing = loadExistingData(email);
+    if (existing && existing.nulmeting) {
+      banner.classList.add('visible');
+      isEindmeting = true;
+      existingData = existing;
+    } else {
+      banner.classList.remove('visible');
+      isEindmeting = false;
+      existingData = null;
+    }
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+function onIdentifySubmit() {
+  userName = document.getElementById('nameInput').value.trim();
+  userEmail = document.getElementById('emailInput').value.trim();
+  const existing = loadExistingData(userEmail);
+  if (existing && existing.nulmeting) {
+    isEindmeting = true;
+    existingData = existing;
+  } else {
+    isEindmeting = false;
+    existingData = null;
+  }
+  showCompetencyIntro(0);
+}
+
+/* ══════════════════════════════════════
+   3. COMPETENCY INTRO
+   ══════════════════════════════════════ */
+function getStepForCompIntro(ci) {
+  let step = 2; // welcome + identify
+  for (let i = 0; i < ci; i++) {
+    step += 1 + COMPETENCIES[i].statements.length;
+  }
+  return step;
+}
+
+function showCompetencyIntro(ci) {
+  const comp = COMPETENCIES[ci];
+  currentStep = getStepForCompIntro(ci);
+  updateProgress();
+
+  const bgColor = comp.color + '15';
+  const prevAction = ci === 0
+    ? `showIdentify()`
+    : `showStatement(${ci - 1}, ${COMPETENCIES[ci - 1].statements.length - 1})`;
+
+  transition(() => {
+    app.innerHTML = `
+      <div class="card hidden pillar-intro">
+        <div class="section-label">Competentie ${comp.number} van 5</div>
+        <div class="pillar-header">
+          <div class="pillar-number" style="background:${bgColor};font-size:1.4rem">${comp.icon}</div>
+          <div class="pillar-header-text">
+            <h2>${comp.title}</h2>
+            <p class="pillar-sub">${comp.statements.length} stellingen</p>
+          </div>
+        </div>
+        <p class="intro-text">${comp.intro}</p>
+        <div class="module-link" style="background:${comp.color}15;color:${comp.color}">
+          \u{1F393} Leerdoel in Module: ${comp.module}
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="${prevAction}">← Terug</button>
+          <button class="btn btn-primary" onclick="showStatement(${ci}, 0)">Begin →</button>
+        </div>
+      </div>`;
+  });
+}
+
+/* ══════════════════════════════════════
+   4. STATEMENTS (one at a time)
+   ══════════════════════════════════════ */
+function getStepForStatement(ci, si) {
+  return getStepForCompIntro(ci) + 1 + si;
+}
+
+function showStatement(ci, si) {
+  const comp = COMPETENCIES[ci];
+  const stmt = comp.statements[si];
+  const globalIdx = getGlobalStatementIndex(ci, si) + 1;
+  const answerKey = `${ci}-${si}`;
+  const currentAnswer = answers[answerKey] || null;
+
+  currentStep = getStepForStatement(ci, si);
+  updateProgress();
+
+  const prevAction = si === 0
+    ? `showCompetencyIntro(${ci})`
+    : `showStatement(${ci}, ${si - 1})`;
+
+  transition(() => {
+    app.innerHTML = `
+      <div class="card hidden">
+        <div class="question-meta">
+          <span class="pill">Stelling ${globalIdx} / ${TOTAL_STATEMENTS}</span>
+          <span class="comp-pill" style="background:${comp.color}15;color:${comp.color}">${comp.icon} ${comp.title}</span>
+        </div>
+        <p class="question-text">“${stmt}”</p>
+        <div class="scale-wrap">
+          <div class="scale-labels">
+            <span>Helemaal niet</span>
+            <span>Volledig</span>
+          </div>
+          <div class="scale-track">
+            ${[1,2,3,4,5].map(v => `
+              <div class="scale-dot${currentAnswer === v ? ' selected' : ''}"
+                   data-value="${v}"
+                   onclick="selectAnswer(${ci}, ${si}, ${v}, this)">${v}</div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="${prevAction}">← Terug</button>
+          <span></span>
+        </div>
+      </div>`;
+  });
+}
+
+function selectAnswer(ci, si, value, dotEl) {
+  answers[`${ci}-${si}`] = value;
+
+  // Visual feedback
+  document.querySelectorAll('.scale-dot').forEach(d => d.classList.remove('selected'));
+  dotEl.classList.add('selected');
+
+  // Auto-advance after 350ms
+  setTimeout(() => {
+    advanceFromStatement(ci, si);
+  }, 350);
+}
+
+function advanceFromStatement(ci, si) {
+  const comp = COMPETENCIES[ci];
+  if (si < comp.statements.length - 1) {
+    // Next statement in same competency
+    showStatement(ci, si + 1);
+  } else if (ci < COMPETENCIES.length - 1) {
+    // Next competency intro
+    showCompetencyIntro(ci + 1);
+  } else {
+    // Done with all statements
+    if (isEindmeting) {
+      showFeedbackQuestion(0);
+    } else {
+      showResults();
+    }
+  }
+}
+
+/* ══════════════════════════════════════
+   5. FEEDBACK QUESTIONS (eindmeting only)
+   ══════════════════════════════════════ */
+const FEEDBACK_QUESTIONS = [
+  {
+    text: 'Had je voldoende tijd om de stellingen goed te beantwoorden?',
+    options: ['Ja, ruim voldoende', 'Ja, net genoeg', 'Nee, te weinig tijd'],
+  },
+  {
+    text: 'Had je genoeg informatie om de stellingen goed te beantwoorden?',
+    options: ['Ja, alles was duidelijk', 'Meestal wel, soms twijfel', 'Nee, ik miste context'],
+  },
+];
+
+function getStepForFeedback(qi) {
+  let step = 2; // welcome + identify
+  for (const comp of COMPETENCIES) {
+    step += 1 + comp.statements.length;
+  }
+  return step + qi;
+}
+
+function showFeedbackQuestion(qi) {
+  const q = FEEDBACK_QUESTIONS[qi];
+  const currentAnswer = feedbackAnswers[`q${qi}`] || null;
+
+  currentStep = getStepForFeedback(qi);
+  updateProgress();
+
+  const prevAction = qi === 0
+    ? `showStatement(${COMPETENCIES.length - 1}, ${COMPETENCIES[COMPETENCIES.length - 1].statements.length - 1})`
+    : `showFeedbackQuestion(${qi - 1})`;
+
+  transition(() => {
+    app.innerHTML = `
+      <div class="card hidden">
+        <div class="section-label">Feedback</div>
+        <h2>${q.text}</h2>
+        <p class="intro-text" style="font-size:.85rem;margin-bottom:1.25rem">
+          Deze vraag wordt niet meegeteld in je score.
+        </p>
+        <div>
+          ${q.options.map((opt, oi) => `
+            <div class="feedback-option${currentAnswer === oi ? ' selected' : ''}"
+                 onclick="selectFeedback(${qi}, ${oi}, this)">
+              <div class="feedback-dot"></div>
+              <span>${opt}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="${prevAction}">← Terug</button>
+          <span></span>
+        </div>
+      </div>`;
+  });
+}
+
+function selectFeedback(qi, optionIdx, el) {
+  feedbackAnswers[`q${qi}`] = optionIdx;
+  document.querySelectorAll('.feedback-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+
+  setTimeout(() => {
+    if (qi < FEEDBACK_QUESTIONS.length - 1) {
+      showFeedbackQuestion(qi + 1);
+    } else {
+      showResults();
+    }
+  }, 350);
+}
+
+/* ══════════════════════════════════════
+   6. RESULTS
+   ══════════════════════════════════════ */
+function showResults() {
+  currentStep = getTotalSteps();
+  updateProgress();
+
+  // Save first
+  const savedData = saveData();
+
+  if (isEindmeting && existingData && existingData.nulmeting) {
+    showDeltaResults(savedData);
+  } else {
+    showNulmetingResults(savedData);
+  }
+}
+
+/* ── Nulmeting Results ── */
+function showNulmetingResults(data) {
+  const scores = data.nulmeting.scores;
+
+  transition(() => {
+    let compHTML = '';
+    for (let ci = 0; ci < COMPETENCIES.length; ci++) {
+      const comp = COMPETENCIES[ci];
+      const cs = scores.competencies[ci];
+      const tipLevel = getTipLevel(cs.pct);
+      compHTML += `
+        <div class="comp-result">
+          <div class="comp-result-header">
+            <div class="comp-icon" style="background:${comp.color}15">${comp.icon}</div>
+            <div class="comp-result-info">
+              <div class="comp-result-name">${comp.title}</div>
+              <div class="comp-result-module">\u{1F393} Module: ${comp.module}</div>
+            </div>
+            <div class="comp-result-score" style="color:${comp.color}">${cs.pct}%</div>
+          </div>
+          <div class="comp-bar-track">
+            <div class="comp-bar-fill" style="background:${comp.color}" data-width="${cs.pct}"></div>
+          </div>
+          <div class="comp-tip">
+            <strong>${cs.label}</strong> — ${comp.tips[tipLevel]}
+          </div>
+        </div>`;
+    }
+
+    app.innerHTML = `
+      <div class="card hidden">
+        <div class="results-header">
+          <div class="logo">CODE<span>-V</span></div>
+          <h1>Je nulmeting, ${userName.split(' ')[0]}</h1>
+          <p>Hier sta je nu op de 5 competenties van inclusief financieren.</p>
+        </div>
+
+        <div style="text-align:center">
+          <div class="overall-circle" id="overallCircle">
+            ${scores.overall}%
+            <small>overall</small>
+          </div>
+          <div class="overall-label">${scores.overallLabel}</div>
+        </div>
+
+        ${compHTML}
+
+        <div class="result-insight">
+          <strong>Wat nu?</strong> Na de leergang vul je dezelfde scan opnieuw in
+          en zie je direct je groei. Gebruik je resultaten als kompas tijdens de modules.
+        </div>
+
+        <div class="saved-notice">
+          <span>✅</span>
+          Je resultaten zijn automatisch opgeslagen. Gebruik hetzelfde e-mailadres
+          voor de eindmeting om je groei te zien.
+        </div>
+
+        <div class="cta-section">
+          <h3>Meer weten over de leergang?</h3>
+          <p>De Leergang Inclusief Financieren helpt je om op alle 5 competenties te groeien.</p>
+          <a href="https://code-v.org" target="_blank" class="btn btn-cta" rel="noopener">
+            Bekijk de leergang →
+          </a>
+        </div>
+      </div>`;
+
+    // Animate bars after card appears
+    setTimeout(() => {
+      document.querySelectorAll('.comp-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+    }, 100);
+  });
+}
+
+/* ── Eindmeting Delta Results ── */
+function showDeltaResults(data) {
+  const before = data.nulmeting.scores;
+  const after = data.eindmeting.scores;
+  const overallDelta = after.overall - before.overall;
+
+  // Find biggest growth
+  let maxGrowth = { idx: 0, delta: -Infinity };
+  for (let i = 0; i < COMPETENCIES.length; i++) {
+    const d = after.competencies[i].pct - before.competencies[i].pct;
+    if (d > maxGrowth.delta) {
+      maxGrowth = { idx: i, delta: d };
+    }
+  }
+
+  const deltaClass = overallDelta > 0 ? 'positive' : overallDelta < 0 ? 'negative' : 'neutral';
+  const deltaSign = overallDelta > 0 ? '+' : '';
+
+  transition(() => {
+    let compHTML = '';
+    for (let ci = 0; ci < COMPETENCIES.length; ci++) {
+      const comp = COMPETENCIES[ci];
+      const bScore = before.competencies[ci];
+      const aScore = after.competencies[ci];
+      const delta = aScore.pct - bScore.pct;
+      const dSign = delta > 0 ? '+' : '';
+      const dClass = delta > 0 ? 'positive' : delta < 0 ? 'negative' : 'neutral';
+      const dLevel = getDeltaLevel(delta);
+
+      compHTML += `
+        <div class="comp-delta-result">
+          <div class="comp-delta-header">
+            <div class="comp-icon" style="background:${comp.color}15">${comp.icon}</div>
+            <div class="comp-delta-info">
+              <div class="comp-delta-name">${comp.title}</div>
+              <div class="comp-delta-module">\u{1F393} Module: ${comp.module}</div>
+            </div>
+            <div class="comp-delta-badge">
+              <span class="delta-badge ${dClass}" style="font-size:.78rem;padding:.25rem .6rem">${dSign}${delta}%</span>
+            </div>
+          </div>
+          <div class="dual-bar-wrap">
+            <div class="dual-bar-row">
+              <span class="dual-bar-label">Nulmeting</span>
+              <div class="dual-bar-track">
+                <div class="dual-bar-fill before" style="background:${comp.color}" data-width="${bScore.pct}"></div>
+              </div>
+              <span class="dual-bar-value" style="color:#999">${bScore.pct}%</span>
+            </div>
+            <div class="dual-bar-row">
+              <span class="dual-bar-label">Eindmeting</span>
+              <div class="dual-bar-track">
+                <div class="dual-bar-fill" style="background:${comp.color}" data-width="${aScore.pct}"></div>
+              </div>
+              <span class="dual-bar-value" style="color:${comp.color}">${aScore.pct}%</span>
+            </div>
+          </div>
+          <div class="comp-delta-feedback">
+            ${comp.deltaFeedback[dLevel]}
+          </div>
+        </div>`;
+    }
+
+    const growthComp = COMPETENCIES[maxGrowth.idx];
+
+    app.innerHTML = `
+      <div class="card hidden">
+        <div class="delta-header">
+          <div class="logo">CODE<span>-V</span></div>
+          <h1>Je groei in beeld</h1>
+          <p>${userName.split(' ')[0]}, hier zie je hoe je competenties zich ontwikkeld hebben.</p>
+        </div>
+
+        <div class="delta-overall">
+          <div class="delta-score-block">
+            <div class="delta-score-circle" style="background:linear-gradient(135deg,#8a7aad,#b0a3c0)">
+              ${before.overall}%
+              <small>voor</small>
+            </div>
+            <div class="delta-score-label">${before.overallLabel}</div>
+          </div>
+          <div class="delta-arrow">→</div>
+          <div class="delta-score-block">
+            <div class="delta-score-circle" style="background:linear-gradient(135deg,var(--aubergine),#4a2d6e)">
+              ${after.overall}%
+              <small>na</small>
+            </div>
+            <div class="delta-score-label">${after.overallLabel}</div>
+          </div>
+          <div class="delta-badge ${deltaClass}" style="font-size:1.1rem">
+            ${deltaSign}${overallDelta}%
+          </div>
+        </div>
+
+        ${compHTML}
+
+        ${maxGrowth.delta > 0 ? `
+        <div class="growth-highlight">
+          \u{1F31F} <strong>Grootste groei: ${growthComp.title}</strong> (+${maxGrowth.delta}%)
+          <br>Dit heb je geleerd in Module: ${growthComp.module}.
+        </div>` : ''}
+
+        <div class="saved-notice">
+          <span>✅</span>
+          Je eindmeting is opgeslagen naast je nulmeting.
+          Je kunt dit venster sluiten of de resultaten delen met je leidinggevende.
+        </div>
+
+        <div class="cta-section">
+          <h3>En nu?</h3>
+          <p>Gebruik je groeirapport als basis voor een gesprek met je team of leidinggevende.
+          Welke competentie wil je blijven ontwikkelen?</p>
+          <a href="https://code-v.org" target="_blank" class="btn btn-cta" rel="noopener">
+            Terug naar Code-V →
+          </a>
+        </div>
+      </div>`;
+
+    // Animate bars
+    setTimeout(() => {
+      document.querySelectorAll('.dual-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.width + '%';
+      });
+    }, 100);
+  });
+}
+
+/* ══════════════════════════════════════
+   INIT
+   ══════════════════════════════════════ */
+showWelcome();
+</script>
+</body>
+</html>
