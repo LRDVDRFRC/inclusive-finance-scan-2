@@ -6,6 +6,7 @@
   <title>Code-V · Persoonlijk Self-Assessment Inclusief Financieren</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -735,6 +736,34 @@
     .cta-section { text-align: center; margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid #eee; }
     .cta-section h3 { font-size: 1.05rem; margin-bottom: .4rem; }
     .cta-section p { font-size: .82rem; color: #666; margin-bottom: 1.1rem; line-height: 1.6; }
+
+    /* ── PDF export button ── */
+    .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--white);
+      color: var(--aubergine);
+      border: 2px solid var(--aubergine);
+      padding: .65rem 1.25rem;
+      border-radius: 12px;
+      font-family: 'Poppins', sans-serif;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .25s ease;
+      margin-top: 1rem;
+    }
+    .btn-pdf:hover {
+      background: var(--aubergine);
+      color: var(--white);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(46,26,71,.25);
+    }
+    .btn-pdf:disabled {
+      opacity: .5;
+      cursor: wait;
+    }
 
     /* ── Responsive ── */
     @media (max-width: 600px) {
@@ -1549,6 +1578,10 @@ function showNulmetingResults(data) {
           voor de eindmeting om je groei te zien.
         </div>
 
+        <div style="text-align:center">
+          <button class="btn-pdf" onclick="exportPDF()">\u{1F4C4} Download PDF</button>
+        </div>
+
         <div class="cta-section">
           <h3>Meer weten over de leergang?</h3>
           <p>De Leergang Inclusief Financieren helpt je om op alle 5 competenties te groeien.</p>
@@ -1677,6 +1710,10 @@ function showDeltaResults(data) {
           Je kunt dit venster sluiten of de resultaten delen met je leidinggevende.
         </div>
 
+        <div style="text-align:center">
+          <button class="btn-pdf" onclick="exportPDF()">\u{1F4C4} Download groeirapport (PDF)</button>
+        </div>
+
         <div class="cta-section">
           <h3>En nu?</h3>
           <p>Gebruik je groeirapport als basis voor een gesprek met je team of leidinggevende.
@@ -1694,6 +1731,285 @@ function showDeltaResults(data) {
       });
     }, 100);
   });
+}
+
+/* ══════════════════════════════════════
+   PDF EXPORT
+   ══════════════════════════════════════ */
+function exportPDF() {
+  const btn = document.querySelector('.btn-pdf');
+  if (btn) { btn.disabled = true; btn.textContent = 'Genereren...'; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297;
+  const margin = 18;
+  const contentW = W - margin * 2;
+
+  const aubergine = [46, 26, 71];
+  const lila = [150, 120, 211];
+  const grey = [242, 242, 242];
+  const white = [255, 255, 255];
+  const compColors = COMPETENCIES.map(c => {
+    const hex = c.color.replace('#', '');
+    return [parseInt(hex.substring(0,2),16), parseInt(hex.substring(2,4),16), parseInt(hex.substring(4,6),16)];
+  });
+
+  const data = loadExistingData(userEmail);
+  const isEnd = !!(data && data.eindmeting);
+  const scores = isEnd ? data.eindmeting.scores : data.nulmeting.scores;
+  const beforeScores = isEnd ? data.nulmeting.scores : null;
+  const dateStr = new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Header bar
+  doc.setFillColor(...aubergine);
+  doc.rect(0, 0, W, 28, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(...white);
+  doc.text('CODE-V', margin, 13);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Persoonlijk Self-Assessment Inclusief Financieren', margin, 20);
+  doc.setFontSize(8);
+  doc.text(dateStr, W - margin, 13, { align: 'right' });
+
+  let y = 38;
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...aubergine);
+  const title = isEnd ? `Groeirapport — ${userName}` : `Nulmeting — ${userName}`;
+  doc.text(title, margin, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`${userOrg}  ·  ${userEmail}`, margin, y);
+  y += 10;
+
+  // Overall score(s)
+  if (isEnd && beforeScores) {
+    // Before → After
+    const bx = margin + contentW * 0.25;
+    const ax = margin + contentW * 0.6;
+    doc.setFillColor(180, 170, 200);
+    doc.circle(bx, y + 12, 12, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...white);
+    doc.text(`${beforeScores.overall}%`, bx, y + 14, { align: 'center' });
+    doc.setFontSize(6);
+    doc.text('VOOR', bx, y + 19, { align: 'center' });
+
+    doc.setFontSize(16);
+    doc.setTextColor(...aubergine);
+    doc.text('→', margin + contentW * 0.42, y + 14, { align: 'center' });
+
+    doc.setFillColor(...aubergine);
+    doc.circle(ax, y + 12, 12, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...white);
+    doc.text(`${scores.overall}%`, ax, y + 14, { align: 'center' });
+    doc.setFontSize(6);
+    doc.text('NA', ax, y + 19, { align: 'center' });
+
+    const delta = scores.overall - beforeScores.overall;
+    const dSign = delta > 0 ? '+' : '';
+    doc.setFontSize(13);
+    doc.setTextColor(delta > 0 ? 107 : 211, delta > 0 ? 155 : 93, delta > 0 ? 55 : 84);
+    doc.text(`${dSign}${delta}%`, margin + contentW * 0.82, y + 14, { align: 'center' });
+
+    y += 30;
+  } else {
+    const cx = W / 2;
+    doc.setFillColor(...aubergine);
+    doc.circle(cx, y + 14, 14, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...white);
+    doc.text(`${scores.overall}%`, cx, y + 16, { align: 'center' });
+    doc.setFontSize(6);
+    doc.text('OVERALL', cx, y + 22, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setTextColor(...aubergine);
+    doc.text(scores.overallLabel, cx, y + 33, { align: 'center' });
+    y += 40;
+  }
+
+  // Spider chart
+  const radarCx = W / 2;
+  const radarCy = y + 42;
+  const radarR = 32;
+  const N = COMPETENCIES.length;
+  const angleOff = -Math.PI / 2;
+
+  function polar(i, r) {
+    const a = angleOff + (2 * Math.PI * i) / N;
+    return [radarCx + r * Math.cos(a), radarCy + r * Math.sin(a)];
+  }
+
+  // Grid rings
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.2);
+  for (const pct of [20, 40, 60, 80, 100]) {
+    const r = (pct / 100) * radarR;
+    const pts = Array.from({length: N}, (_, i) => polar(i, r));
+    for (let i = 0; i < N; i++) {
+      const [x1, y1] = pts[i];
+      const [x2, y2] = pts[(i + 1) % N];
+      doc.line(x1, y1, x2, y2);
+    }
+  }
+
+  // Spokes
+  for (let i = 0; i < N; i++) {
+    const [x, yy] = polar(i, radarR);
+    doc.line(radarCx, radarCy, x, yy);
+  }
+
+  // Before polygon (eindmeting)
+  if (beforeScores) {
+    const bVals = beforeScores.competencies.map(c => c.pct);
+    doc.setDrawColor(...lila);
+    doc.setLineWidth(0.5);
+    doc.setLineDashPattern([2, 2], 0);
+    const bPts = bVals.map((v, i) => polar(i, (v / 100) * radarR));
+    for (let i = 0; i < N; i++) {
+      doc.line(bPts[i][0], bPts[i][1], bPts[(i+1)%N][0], bPts[(i+1)%N][1]);
+    }
+    doc.setLineDashPattern([], 0);
+  }
+
+  // Current polygon
+  const vals = scores.competencies.map(c => c.pct);
+  doc.setDrawColor(...aubergine);
+  doc.setLineWidth(0.7);
+  doc.setFillColor(46, 26, 71, 25);
+  const cPts = vals.map((v, i) => polar(i, (v / 100) * radarR));
+  // Fill
+  doc.setFillColor(46, 26, 71);
+  doc.setGState(new doc.GState({ opacity: 0.1 }));
+  doc.triangle(cPts[0][0], cPts[0][1], cPts[1][0], cPts[1][1], cPts[2][0], cPts[2][1], 'F');
+  doc.triangle(cPts[0][0], cPts[0][1], cPts[2][0], cPts[2][1], cPts[3][0], cPts[3][1], 'F');
+  doc.triangle(cPts[0][0], cPts[0][1], cPts[3][0], cPts[3][1], cPts[4][0], cPts[4][1], 'F');
+  doc.setGState(new doc.GState({ opacity: 1 }));
+  // Outline
+  for (let i = 0; i < N; i++) {
+    doc.line(cPts[i][0], cPts[i][1], cPts[(i+1)%N][0], cPts[(i+1)%N][1]);
+  }
+
+  // Dots + labels
+  for (let i = 0; i < N; i++) {
+    const [dx, dy] = cPts[i];
+    doc.setFillColor(...compColors[i]);
+    doc.circle(dx, dy, 1.8, 'F');
+    const [lx, ly] = polar(i, radarR + 8);
+    const comp = COMPETENCIES[i];
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...compColors[i]);
+    const anchor = lx < radarCx - 3 ? 'right' : lx > radarCx + 3 ? 'left' : 'center';
+    doc.text(`${comp.title}`, lx, ly, { align: anchor });
+  }
+
+  // Legend for eindmeting
+  if (beforeScores) {
+    const ly = radarCy + radarR + 14;
+    doc.setFontSize(6.5);
+    doc.setTextColor(150, 150, 150);
+    doc.setDrawColor(...lila);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.line(W/2 - 28, ly - 1, W/2 - 22, ly - 1);
+    doc.setLineDashPattern([], 0);
+    doc.text('Nulmeting', W/2 - 20, ly);
+    doc.setDrawColor(...aubergine);
+    doc.setLineWidth(0.7);
+    doc.line(W/2 + 8, ly - 1, W/2 + 14, ly - 1);
+    doc.text('Eindmeting', W/2 + 16, ly);
+  }
+
+  y = radarCy + radarR + (beforeScores ? 22 : 16);
+
+  // Competency detail rows
+  for (let ci = 0; ci < COMPETENCIES.length; ci++) {
+    const comp = COMPETENCIES[ci];
+    const cs = scores.competencies[ci];
+    const tipLevel = getTipLevel(cs.pct);
+
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
+
+    // Competency name + score
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...aubergine);
+    doc.text(`${comp.title}`, margin, y);
+    doc.setTextColor(...compColors[ci]);
+    doc.text(`${cs.pct}%`, W - margin, y, { align: 'right' });
+
+    y += 3.5;
+
+    // Bar background
+    doc.setFillColor(...grey);
+    doc.roundedRect(margin, y, contentW, 3, 1.5, 1.5, 'F');
+
+    // Bar fill
+    if (beforeScores) {
+      const bPct = beforeScores.competencies[ci].pct;
+      doc.setFillColor(...compColors[ci]);
+      doc.setGState(new doc.GState({ opacity: 0.3 }));
+      doc.roundedRect(margin, y, Math.max(3, contentW * bPct / 100), 3, 1.5, 1.5, 'F');
+      doc.setGState(new doc.GState({ opacity: 1 }));
+    }
+    doc.setFillColor(...compColors[ci]);
+    doc.roundedRect(margin, y, Math.max(3, contentW * cs.pct / 100), 3, 1.5, 1.5, 'F');
+
+    y += 5.5;
+
+    // Tip
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    const tipText = `${cs.label} — ${comp.tips[tipLevel]}`;
+    const lines = doc.splitTextToSize(tipText, contentW);
+    doc.text(lines, margin, y);
+    y += lines.length * 3.2 + 4;
+
+    // Delta badge for eindmeting
+    if (beforeScores) {
+      const delta = cs.pct - beforeScores.competencies[ci].pct;
+      if (delta !== 0) {
+        const dSign = delta > 0 ? '+' : '';
+        doc.setFontSize(7);
+        doc.setTextColor(delta > 0 ? 107 : 211, delta > 0 ? 155 : 93, delta > 0 ? 55 : 84);
+        doc.text(`${dSign}${delta}%`, W - margin, y - lines.length * 3.2 - 6.5, { align: 'right' });
+      }
+    }
+  }
+
+  // Footer
+  y += 4;
+  if (y > 270) { doc.addPage(); y = 20; }
+  doc.setDrawColor(220, 220, 220);
+  doc.line(margin, y, W - margin, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(150, 150, 150);
+  doc.text('Code-V · Leergang Inclusief Financieren · code-v.org', W / 2, y, { align: 'center' });
+  y += 4;
+  doc.text('Dit rapport is automatisch gegenereerd op basis van je self-assessment.', W / 2, y, { align: 'center' });
+
+  // Save
+  const prefix = isEnd ? 'groeirapport' : 'nulmeting';
+  doc.save(`${prefix}-${userName.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '\u{1F4C4} Download PDF'; }
 }
 
 /* ══════════════════════════════════════
